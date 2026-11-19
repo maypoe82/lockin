@@ -1,0 +1,49 @@
+# Continuous integration: runs on every push and pull request.
+# 1. Unit + integration tests against a real MySQL database
+# 2. Builds the Docker image to make sure it still builds
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: lockin
+          MYSQL_USER: lockin
+          MYSQL_PASSWORD: lockin
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: lockin
+      DB_PASSWORD: lockin
+      DB_NAME: lockin
+      SESSION_SECRET: ci-secret
+      AI_PROVIDER: mock
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t lockin:ci .
