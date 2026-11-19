@@ -157,7 +157,45 @@ function last7Days(rows) {
   return out;
 }
 
+// ---------- Progress over time ----------
+
+async function progress(userId) {
+  const [attempts] = await db.query(
+    `SELECT qa.id, qa.score, qa.total, qa.mode, qa.created_at, m.title, m.module_code
+       FROM quiz_attempts qa JOIN materials m ON m.id = qa.material_id
+      WHERE qa.user_id = ? ORDER BY qa.id`, [userId]);
+  attempts.forEach((a) => (a.pct = a.total ? Math.round((a.score / a.total) * 100) : 0));
+
+  // Accuracy per topic in each attempt, to compare first vs latest
+  const [rows] = await db.query(
+    `SELECT t.id AS topic_id, t.name, m.module_code, qa.id AS attempt_id, qa.created_at,
+            SUM(an.correct) AS right_n, COUNT(*) AS total_n
+       FROM answers an
+       JOIN quiz_attempts qa ON qa.id = an.attempt_id
+       JOIN questions q ON q.id = an.question_id
+       JOIN topics t ON t.id = q.topic_id
+       JOIN materials m ON m.id = t.material_id
+      WHERE qa.user_id = ?
+      GROUP BY t.id, t.name, m.module_code, qa.id, qa.created_at
+      ORDER BY qa.id`, [userId]);
+  const byTopic = {};
+  for (const r of rows) {
+    const pct = Math.round((Number(r.right_n) / Number(r.total_n)) * 100);
+    const t = (byTopic[r.topic_id] ||= { id: r.topic_id, name: r.name, module_code: r.module_code, history: [] });
+    t.history.push(pct);
+  }
+  const topics = Object.values(byTopic).map((t) => ({
+    ...t,
+    first: t.history[0],
+    latest: t.history[t.history.length - 1],
+    change: t.history[t.history.length - 1] - t.history[0],
+    attempts: t.history.length,
+  })).sort((a, b) => a.module_code.localeCompare(b.module_code) || b.change - a.change);
+  return { attempts, topics };
+}
+
 module.exports = {
+  progress,
   WEAK_BELOW, MASTERED_AT, LEVELS, XP,
   levelFor, revisionMinutes, topicScores, weakTopics, buildPlan,
   awardXP, logStudy, streak, dashboardStats, localDate,

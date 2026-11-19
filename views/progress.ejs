@@ -1,0 +1,42 @@
+<%- include('partials/header') %>
+<div class="page-head"><div><h1>Progress</h1><p class="lead">How your quiz scores and topic mastery have changed over time.</p></div></div>
+
+<% if (!attempts.length) { %>
+  <div class="card center empty"><h2>No quiz results yet</h2><p class="muted">Take a quiz to start tracking your progress.</p><a href="/materials" class="btn">Go to my notes</a></div>
+<% } else { %>
+  <% const W = 720, H = 220, P = 46, n = attempts.length;
+     const x = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1);
+     const y = v => H - P - v * (H - 2 * P) / 100;
+     const pts = attempts.map((a, i) => `${x(i).toFixed(1)},${y(a.pct).toFixed(1)}`).join(' '); %>
+  <section class="card">
+    <h2>Quiz scores</h2>
+    <svg class="chart" viewBox="0 0 <%= W %> <%= H %>" role="img" aria-label="Line chart of quiz scores over time, from <%= attempts[0].pct %>% to <%= attempts[n - 1].pct %>%">
+      <% [0, 60, 100].forEach(v => { %>
+        <line x1="<%= P %>" x2="<%= W - P %>" y1="<%= y(v) %>" y2="<%= y(v) %>" class="grid <%= v === 60 ? 'target' : '' %>"/>
+        <text x="<%= P - 6 %>" y="<%= y(v) + 4 %>" text-anchor="end" class="axis"><%= v %>%</text>
+      <% }) %>
+      <text x="<%= W - P %>" y="<%= y(60) - 6 %>" text-anchor="end" class="axis">Target</text>
+      <% if (n > 1) { %><polyline points="<%= pts %>" class="line"/><% } %>
+      <% attempts.forEach((a, i) => { %>
+        <circle cx="<%= x(i) %>" cy="<%= y(a.pct) %>" r="4" class="dot"><title><%= a.title %>: <%= a.pct %>% (<%= String(a.created_at).slice(0, 10) %>)</title></circle>
+      <% }) %>
+    </svg>
+    <p class="muted">Latest: <strong><%= attempts[n - 1].pct %>%</strong> on <%= attempts[n - 1].title %><%= n > 1 ? ` · first quiz: ${attempts[0].pct}%` : '' %></p>
+  </section>
+
+  <section class="card">
+    <h2>Topic mastery: first attempt vs latest</h2>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Module</th><th>Topic</th><th class="num">First</th><th class="num">Latest</th><th class="num">Change</th><th class="num">Quizzes</th></tr></thead>
+        <tbody>
+          <% topics.forEach(t => { %>
+            <tr><td><%= t.module_code %></td><td><%= t.name %></td><td class="num"><%= t.first %>%</td><td class="num"><%= t.latest %>%</td>
+              <td class="num <%= t.change > 0 ? 'up' : t.change < 0 ? 'down' : '' %>"><%= t.change > 0 ? '+' : '' %><%= t.change %></td><td class="num"><%= t.attempts %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% } %>
+<%- include('partials/footer') %>

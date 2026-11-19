@@ -1,25 +1,7 @@
-// Creates all tables. Usage: npm run db:init
+// Creates/upgrades all tables. Usage: npm run db:init
 require('dotenv').config({ quiet: true });
-const fs = require('fs');
-const path = require('path');
-const mysql = require('mysql2/promise');
+const migrate = require('./migrate');
 
-async function main() {
-  const conn = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || 'lockin',
-    password: process.env.DB_PASSWORD || 'lockin',
-    database: process.env.DB_NAME || 'lockin',
-    multipleStatements: true,
-  });
-  const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-  await conn.query(sql);
-  console.log('✅ LockIn tables ready');
-  await conn.end();
-}
-
-main().catch((err) => {
-  console.error('❌ DB init failed:', err.message);
-  process.exit(1);
-});
+migrate()
+  .then(() => { console.log('LockIn tables ready'); process.exit(0); })
+  .catch((err) => { console.error('DB init failed:', err.message); process.exit(1); });

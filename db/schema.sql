@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS materials (
   title       VARCHAR(200) NOT NULL,
   summary     TEXT,
   raw_text    MEDIUMTEXT,
+  status      VARCHAR(20) NOT NULL DEFAULT 'ready',   -- processing | ready | failed
+  error       VARCHAR(255),
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -98,5 +100,41 @@ CREATE TABLE IF NOT EXISTS xp_events (
   amount     INT NOT NULL,
   reason     VARCHAR(120) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Login sessions (kept in the database so users stay logged in across restarts)
+CREATE TABLE IF NOT EXISTS sessions (
+  sid     VARCHAR(128) PRIMARY KEY,
+  data    TEXT NOT NULL,
+  expires BIGINT NOT NULL
+);
+
+-- Spaced repetition: one row per user per flashcard (Leitner box 1-5)
+CREATE TABLE IF NOT EXISTS flashcard_reviews (
+  user_id      INT NOT NULL,
+  flashcard_id INT NOT NULL,
+  box          TINYINT NOT NULL DEFAULT 1,
+  due_date     DATE NOT NULL,
+  reviews      INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, flashcard_id),
+  FOREIGN KEY (user_id)      REFERENCES users(id)      ON DELETE CASCADE,
+  FOREIGN KEY (flashcard_id) REFERENCES flashcards(id) ON DELETE CASCADE
+);
+
+-- Exam dates per module (for the revision schedule)
+CREATE TABLE IF NOT EXISTS exams (
+  user_id     INT NOT NULL,
+  module_code VARCHAR(20) NOT NULL,
+  exam_date   DATE NOT NULL,
+  PRIMARY KEY (user_id, module_code),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Password reset links (token is stored hashed)
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash CHAR(64) PRIMARY KEY,
+  user_id    INT NOT NULL,
+  expires_at BIGINT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );

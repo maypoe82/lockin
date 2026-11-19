@@ -3,18 +3,19 @@
   <h1>Upload notes</h1>
   <p class="muted">Upload a PDF of lecture slides or notes, or paste the text. LockIn splits the material into topics and generates a study pack.</p>
   <form action="/upload" method="POST" enctype="multipart/form-data" class="form" id="upload-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="row">
       <label>Module code <input name="module_code" required maxlength="20"></label>
       <label>Title <input name="title" maxlength="200"></label>
     </div>
-    <label class="drop">
-      <input type="file" name="file" accept=".pdf,.txt,.md">
-      <span class="muted">Choose a PDF file (maximum 20 MB)</span>
+    <label class="drop" id="dropzone">
+      <input type="file" name="file" accept=".pdf,.txt,.md" id="file-input" class="sr-only">
+      <strong id="drop-title">Drag a PDF here, or click to choose a file</strong>
+      <span class="muted" id="drop-sub">PDF, TXT or MD · maximum 20 MB</span>
     </label>
     <p class="muted center">or</p>
     <label>Paste text <textarea name="text" rows="8"></textarea></label>
     <button class="btn" id="upload-btn">Generate study pack</button>
-    <p class="muted hidden" id="upload-wait">Generating your study pack. This usually takes under a minute, but can take longer when the AI service is busy.</p>
   </form>
 </div>
 <%- include('partials/footer') %>

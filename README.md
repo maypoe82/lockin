@@ -1,83 +1,77 @@
 # LockIn
 
-> Adaptive study platform for university students.
+[![CI](https://github.com/maypoe82/lockin/actions/workflows/ci.yml/badge.svg)](https://github.com/maypoe82/lockin/actions/workflows/ci.yml)
 
-LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it into simple explanations, **Brainrot Mode** explanations, quick notes, flashcards and quizzes. It then tracks which topics you actually understand and builds a **Revision Plan** for the ones you don't.
+**Adaptive study platform for university students.**
+Upload lecture notes and LockIn generates explanations, flashcards and quizzes, measures your understanding of each topic, and builds a revision plan around your weak topics and exam dates.
 
-**It's not just an AI summariser. The point is AI + adaptive learning + analytics.**
+**Live demo:** https://lockin-vum5.onrender.com
+(Free hosting: the first visit after a quiet period takes about 50 seconds to wake up.)
+
+![Dashboard](docs/screenshots/dashboard-light.png)
+
+| Study page | Revision Plan (dark mode) |
+|---|---|
+| ![Study page](docs/screenshots/study-light.png) | ![Revision plan](docs/screenshots/plan-dark.png) |
+| **Quiz results** | **Flashcards with spaced repetition** |
+| ![Results](docs/screenshots/results-light.png) | ![Flashcards](docs/screenshots/flashcards-dark.png) |
 
 ## Features
 
 | | |
 |---|---|
-| **Learn** | AI splits your notes into topics and explains each one simply |
-| **Brainrot mode** | Same topic, explained casually (still technically correct) |
-| **Quick Notes** | Must-know bullet points per topic |
-| **Flashcards** | Flip cards with keyboard controls (← → space) |
-| **Quiz** | Up to 15 questions, spread across every topic, easy / medium / hard |
+| **AI study packs** | A lecture PDF is split into topics, each with an explanation, a casual "Brainrot mode" explanation, key points, flashcards and quiz questions (easy, medium, hard) |
+| **Background generation** | Uploads return immediately; a status page updates itself when the study pack is ready, with a retry option if the AI service is busy |
+| **Topic mastery** | Each topic's score is based on the last 10 answers, so improvement shows quickly |
 | **Revision alerts** | After a quiz: "You answered 3 Middleware questions incorrectly. Suggested revision time: 12 minutes" |
-| **Topic mastery** | Each topic's score uses your **last 10 answers**, so improvement shows quickly |
-| **Revision Plan** | For each weak topic (<60%): review → 5 easy → 5 medium → review mistakes → retake |
-| **Adaptive questions** | Lock-In quizzes use questions you haven't got right yet. If there aren't enough, the AI generates new ones for that topic |
-| **Gamification** | XP (+50 per quiz, +100 per mastered topic, +30 per 30 min studied), 5 levels (Distracted → Final Boss ), daily streaks |
-| **Dashboard** | Streak, average mastery, study time, questions answered, topic mastery by module, weekly chart, weakest topic |
-| **Light and dark mode** | Users can switch themes; the choice is remembered |
+| **Revision Plan** | Topics below 60% get a five-step plan: review, easy questions, medium questions, review mistakes, retake |
+| **Adaptive questions** | Practice quizzes use questions you have not yet answered correctly; when they run out, new ones are generated for that topic |
+| **Exam planner** | Add an exam date per module; topics that need work are spread across the days before it, weakest first |
+| **Spaced repetition** | Flashcards use the Leitner system: known cards return after 1, 3, 7, 14 then 30 days; missed cards return the same day |
+| **Progress tracking** | Quiz score trend chart and first-vs-latest mastery for every topic; daily streak and study time |
+| **Accounts** | Sign up, log in, password reset by email |
+| **Light and dark mode** | Switchable, remembered per browser, defaults to the device setting |
 
 ## Tech stack
 
-- **Backend:** Node.js, Express, REST routes, express-session, bcrypt
-- **Frontend:** EJS templates, CSS, vanilla JS
-- **Database:** MySQL 8
-- **AI:** Google Gemini (free tier) or OpenAI, with JSON-output prompts and validation. There's also a built-in **demo mode** that works with no API key.
-- **PDF:** pdf-parse (Mozilla pdf.js)
-- **DevOps:** Docker, Docker Compose, Jenkins pipeline, AWS EC2
+- **Backend:** Node.js, Express, EJS server-rendered views
+- **Database:** MySQL 8 (TiDB Cloud in production)
+- **AI:** Google Gemini with JSON-structured prompts, output validation, retries, model fallback and a time limit
+- **Security:** bcrypt password hashing, CSRF tokens, Helmet security headers with a nonce-based Content Security Policy, rate limiting on login/upload/reset, session regeneration on login, database-backed sessions
+- **DevOps:** Docker, Docker Compose, GitHub Actions CI (tests against a real MySQL service + Docker build), Render deployment, Jenkinsfile for a self-hosted pipeline
 
 ```
-Browser ──► Express (routes) ──► services/ai.js ──► Gemini / OpenAI
-                │                services/pdf.js
-                │                services/analytics.js (mastery, plan, XP, streaks)
+Browser ──► Express routes ──► services/ai.js ───────► Gemini
+                │               services/analytics.js   (mastery, revision plan, streaks)
+                │               services/spaced.js      (flashcard scheduling)
+                │               services/schedule.js    (exam planner)
                 ▼
-             MySQL
+              MySQL  (users, materials, topics, questions, answers, sessions, ...)
 ```
 
-## Run it
+## Run locally
 
-### Option A: Docker (easiest)
+### With Docker
 
 ```bash
-cp .env.example .env          # then paste your GEMINI_API_KEY in .env
+cp .env.example .env          # add your GEMINI_API_KEY
 docker compose up --build
 ```
 
-Open http://localhost:3000. MySQL and its tables are set up automatically.
+Open http://localhost:3000. On Windows you can double-click `start-lockin.bat`.
 
-### Option B: Without Docker
+### Without Docker
 
-You need Node 18+ and MySQL running locally.
-
-```sql
--- in MySQL
-CREATE DATABASE lockin;
-CREATE USER 'lockin'@'localhost' IDENTIFIED BY 'lockin';
-GRANT ALL ON lockin.* TO 'lockin'@'localhost';
-```
+Requires Node 18+ and MySQL.
 
 ```bash
 npm install
-cp .env.example .env          # add your GEMINI_API_KEY
-npm run db:init               # creates the tables
-npm run dev                   # http://localhost:3000 (auto-restarts on save)
+cp .env.example .env          # set DB_* and GEMINI_API_KEY
+npm run db:init               # creates or upgrades the tables
+npm run dev
 ```
 
-### Getting a free AI key
-
-1. Go to https://aistudio.google.com/apikey and create a key.
-2. Put it in `.env` as `GEMINI_API_KEY=...`
-3. Restart the app. The yellow "Demo AI mode" banner disappears.
-
-Without a key, LockIn still runs: demo mode builds topics from your headings and makes fill-in-the-blank questions. That's fine for testing the flow, but the Brainrot explanations are only good with a real model.
-
-**Try it:** upload `samples/c237-sample-notes.pdf`, take the quiz, then get some Middleware questions wrong on purpose and check the dashboard and Revision Plan.
+Without an AI key the app runs in demo mode, which builds topics and fill-in-the-blank questions from your headings.
 
 ## Tests
 
@@ -85,70 +79,36 @@ Without a key, LockIn still runs: demo mode builds topics from your headings and
 npm test
 ```
 
-These cover levels, revision time, weak-topic detection, plan building and the AI output format. Jenkins runs them on every build.
+- **Unit tests:** mastery levels, revision time, weak topics, Revision Plan, spaced repetition intervals, exam scheduling, AI output validation
+- **Integration test:** a full student journey over HTTP against a real database (sign up, upload, background generation, flashcard review, quiz, results, exam date, progress), plus CSRF and login-required checks
+
+GitHub Actions runs all tests on every push, then builds the Docker image.
+
+## Deployment (free tier)
+
+| Part | Service |
+|---|---|
+| Web app | Render free web service (Docker), auto-deploys on every push to `main` |
+| Database | TiDB Cloud Starter (MySQL-compatible), $0 spending limit |
+| AI | Google Gemini API key |
+
+Environment variables on Render: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_SSL=true`, `GEMINI_API_KEY`, `SESSION_SECRET`, `NODE_ENV=production`, and optionally `SMTP_*` for password reset emails. Tables are created and upgraded automatically on startup.
 
 ## Project structure
 
 ```
-app.js                 Express setup, sessions, error pages, /health
-config/db.js           MySQL connection pool
-db/schema.sql          All tables (users, materials, topics, flashcards, questions,
-                       quiz_attempts, answers, study_log, xp_events)
-db/init.js             npm run db:init
-middleware/auth.js     requireLogin + shared view locals
-routes/
-  auth.js              register / login / logout
-  dashboard.js         dashboard, Revision Plan, study-time API
-  materials.js         upload → AI → save, study page, mistakes
-  quiz.js              full quiz, adaptive Lock-In quiz, grading, results + alerts
-services/
-  ai.js                prompts, Gemini/OpenAI calls, output validation, demo mode
-  analytics.js         topic mastery, weak topics, plan, XP, levels, streaks
-  pdf.js               PDF → text
-views/                 EJS pages + partials
-public/                CSS + front-end JS (tabs, flashcards, study timer)
-tests/                 node:test unit tests
-samples/               sample C237 notes (PDF + txt)
-Dockerfile, docker-compose.yml, Jenkinsfile
+app.js                 Express setup, security, sessions, error pages
+config/                MySQL pool, database session store
+db/                    schema.sql, migrate.js (auto-upgrade), init.js
+middleware/            login check, security (CSP, CSRF, rate limits)
+routes/                auth (incl. password reset), dashboard + plan, materials, quiz, study (flashcards, exams, progress)
+services/              ai, analytics, spaced repetition, exam schedule, pdf, mail
+views/                 EJS pages and partials
+public/                CSS (light/dark themes) and front-end JS
+tests/                 unit and integration tests
+.github/workflows/     CI pipeline
 ```
 
-## How the adaptive part works
+## Resume summary
 
-1. **Every answer is stored** with its topic and difficulty.
-2. **Topic score** = % correct over your last 10 answers on that topic (`services/analytics.js → topicScores`).
-   - 80% or above = strong
-   - below 60% = weak, and added to your Revision Plan
-3. **Lock-In quiz** (`routes/quiz.js → /quiz/lockin`) picks 5 questions for one topic and difficulty, starting with ones you've never got right. If fewer than 5 are left, it asks the AI for new ones (`generateMoreQuestions`) and saves them with `source = 'adaptive'`.
-4. **Revision time** = `(100 − score) / 5`, kept between 5 and 15 minutes.
-
-## Deploying to AWS (EC2)
-
-1. Launch an EC2 instance (Amazon Linux 2023, t3.small or bigger). In the security group, open port 22 (SSH) and port 3000 (or 80).
-2. Install Docker and the compose plugin on it, then make a folder:
-   ```bash
-   mkdir -p ~/lockin/db
-   # copy docker-compose.yml → ~/lockin/, db/schema.sql → ~/lockin/db/
-   # create ~/lockin/.env with your secrets + APP_IMAGE=yourdockerhub/lockin:latest
-   ```
-3. In Jenkins, add these credentials: `dockerhub-creds` (username/password) and `ec2-ssh-key` (SSH key). Then edit `DOCKERHUB_USER` and `EC2_HOST` at the top of the `Jenkinsfile`.
-4. Create a Jenkins **Pipeline** job pointing at your GitHub repo, and add a GitHub webhook.
-
-After that, every push to `main` runs **checkout → test → docker build → push to Docker Hub → SSH to EC2 → pull + restart**.
-
-## Roadmap
-
-- [x] PDF → AI → summary, notes, quiz
-- [x] Flashcards
-- [x] Brainrot explanations
-- [x] Performance tracking per topic
-- [x] Adaptive quizzes + AI-generated questions for weak topics
-- [x] Personalised Revision Plan
-- [ ] AI study plan across modules with exam dates
-- [ ] Spaced repetition for flashcards
-- [ ] Leaderboards / study with friends
-- [ ] Store sessions in MySQL/Redis (right now they're in memory, so a restart logs everyone out)
-- [ ] Upload PDFs to S3
-
-## Resume line
-
-> **LockIn — AI-Powered Adaptive Learning Platform.** Developed a full-stack AI learning platform (Node.js, Express, MySQL) that transforms uploaded study materials into personalised summaries, flashcards and quizzes using LLM prompt engineering. Implemented per-topic performance analytics and adaptive AI question generation to identify weak topics and provide targeted revision plans. Containerised with Docker and automated CI/CD to AWS EC2 using Jenkins.
+> **LockIn — AI-Powered Adaptive Learning Platform.** Built a full-stack learning platform (Node.js, Express, MySQL) that turns lecture notes into explanations, flashcards and quizzes using LLM prompt engineering, with background processing, retries and model fallback. Implemented per-topic mastery analytics, adaptive question generation, spaced-repetition flashcards and an exam-date revision planner. Secured with CSRF protection, CSP headers, rate limiting and database-backed sessions. Containerised with Docker, tested with unit and integration tests in a GitHub Actions CI pipeline, and deployed on Render with TiDB Cloud.

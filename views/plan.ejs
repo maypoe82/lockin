@@ -1,9 +1,47 @@
 <%- include('partials/header') %>
-<div class="page-head"><div><h1>Revision Plan</h1><p class="lead">Focus on topics below the 60% target. Tick off each step as you complete it.</p></div></div>
+<div class="page-head"><div><h1>Revision Plan</h1><p class="lead">Focus on topics below the 60% target, and plan your revision around exam dates.</p></div></div>
+
 <% if (!totalTopics) { %>
-  <div class="card center"><p class="muted">No topics yet.</p><a href="/upload" class="btn">Upload notes</a></div>
-<% } else if (!plan.length) { %>
-  <div class="card center"><h2>No topics below target</h2><p class="muted">Every assessed topic is at or above 60%. Take more quizzes to keep your results current.</p><a href="/materials" class="btn">Go to my notes</a></div>
+  <div class="card center empty"><h2>No topics yet</h2><p class="muted">Upload notes and take a quiz to build your plan.</p><a href="/upload" class="btn">Upload notes</a></div>
+<% } else { %>
+
+<section class="card">
+  <h2>Exam schedule</h2>
+  <p class="muted">Add an exam date for a module and LockIn spreads the topics that still need work across the days before it, weakest first. The day before the exam is kept for a full practice quiz.</p>
+  <% modules.forEach(m => { %>
+    <div class="exam-module">
+      <form action="/exams" method="POST" class="exam-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="module_code" value="<%= m.code %>">
+        <label><strong><%= m.code %></strong> exam date <input type="date" name="exam_date" value="<%= m.date || '' %>" min="<%= today %>"></label>
+        <button class="btn btn-small">Save</button>
+        <% if (m.date) { %><button class="link-btn" name="exam_date" value="">Remove</button><% } %>
+      </form>
+      <% if (m.schedule) { %>
+        <% if (m.schedule.daysLeft <= 0) { %><p class="muted">The exam date is today or has passed.</p>
+        <% } else if (!m.schedule.days.length) { %><p class="muted">All <%= m.code %> topics are at 80% or above. Keep practising with full quizzes.</p>
+        <% } else { %>
+          <p class="muted"><%= m.schedule.daysLeft %> day<%= m.schedule.daysLeft === 1 ? '' : 's' %> until the exam.</p>
+          <ol class="schedule">
+            <% m.schedule.days.forEach(d => { const dt = new Date(d.date + 'T00:00:00'); %>
+              <li class="<%= d.date === today ? 'is-today' : '' %>">
+                <span class="schedule-date"><%= d.date === today ? 'Today' : dt.toLocaleDateString('en-SG', { weekday: 'short', day: 'numeric', month: 'short' }) %></span>
+                <span>
+                  <% if (d.finalReview) { %>Full practice quiz for every <%= m.code %> material
+                  <% } else { %><% d.topics.forEach((t, i) => { %><a href="/materials/<%= t.material_id %>#topic-<%= t.id %>"><%= t.name %></a> <span class="muted">(<%= t.score === null ? 'not assessed' : t.score + '%' %>)</span><%= i < d.topics.length - 1 ? ', ' : '' %><% }) %><% } %>
+                </span>
+              </li>
+            <% }) %>
+          </ol>
+        <% } %>
+      <% } %>
+    </div>
+  <% }) %>
+</section>
+
+<h2 class="section-title">Topics below target</h2>
+<% if (!plan.length) { %>
+  <div class="card center"><p class="muted">Every assessed topic is at or above 60%. Take more quizzes to keep your results current.</p></div>
 <% } %>
 <% plan.forEach(p => { %>
   <section class="card plan" data-plan="<%= p.topic.id %>">
@@ -18,4 +56,5 @@
     </ol>
   </section>
 <% }) %>
+<% } %>
 <%- include('partials/footer') %>

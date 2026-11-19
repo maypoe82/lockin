@@ -1,0 +1,8 @@
+<%- include('partials/header', { studyPage: true }) %>
+<div class="page-head"><div><h1>Flashcard review</h1><p class="lead">Cards due today from all your notes, hardest first.</p></div></div>
+<% if (!cards.length) { %>
+  <div class="card center empty"><h2>All caught up</h2><p class="muted">No flashcards are due today. Cards you have reviewed will return on their next scheduled day.</p><a href="/materials" class="btn">Go to my notes</a></div>
+<% } else { %>
+  <%- include('partials/deck', { cards }) %>
+<% } %>
+<%- include('partials/footer') %>

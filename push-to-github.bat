@@ -28,13 +28,16 @@ set REPO=https://github.com/maypoe82/lockin.git
 if not exist ".git" git init -b main >> "%LOG%" 2>&1
 git config user.name >nul 2>nul || git config user.name "maypoe82"
 git config user.email >nul 2>nul || git config user.email "maypoe82@users.noreply.github.com"
+git rm --cached --ignore-unmatch -q push-log.txt >> "%LOG%" 2>&1
 git add . >> "%LOG%" 2>&1
-git commit -m "LockIn: AI-powered adaptive learning platform" >> "%LOG%" 2>&1
+set MSG=Update LockIn
+set /p MSG=Describe this update (or press Enter): 
+git commit -m "%MSG%" >> "%LOG%" 2>&1
 git remote remove origin >nul 2>nul
 git remote add origin %REPO%
 echo.
 echo  Uploading to GitHub... if a sign-in window pops up, sign in there.
-git push -u origin main 2>&1
+git pull --rebase --autostash origin main >> "%LOG%" 2>&1
 git push -u origin main >> "%LOG%" 2>&1
 if errorlevel 1 (
   echo.

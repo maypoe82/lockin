@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+<div class="card narrow center processing" data-status-url="/materials/<%= material.id %>/status" data-status="<%= material.status %>">
+  <span class="pill"><%= material.module_code %></span>
+  <h1><%= material.title %></h1>
+  <% if (material.status === 'processing') { %>
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="lead" role="status">Generating your study pack&hellip;</p>
+    <p class="muted">This usually takes under a minute. It can take longer when the AI service is busy. You can leave this page; the material will appear in My notes when it is ready.</p>
+  <% } else { %>
+    <p class="lead">The study pack could not be generated.</p>
+    <p class="muted"><%= material.error || 'Please try again.' %></p>
+    <div class="row-actions center-actions">
+      <form action="/materials/<%= material.id %>/retry" method="POST"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn">Retry</button></form>
+      <form action="/materials/<%= material.id %>/delete" method="POST" data-confirm="Delete this material?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="btn btn-ghost">Delete</button></form>
+    </div>
+  <% } %>
+</div>
+<%- include('partials/footer') %>

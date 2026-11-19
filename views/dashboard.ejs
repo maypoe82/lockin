@@ -10,6 +10,29 @@
   </p>
 </section>
 
+<% if (onboarding) { %>
+<section class="card onboarding">
+  <h2>Getting started</h2>
+  <ol class="checklist">
+    <% onboarding.forEach(s => { %>
+      <li class="<%= s.done ? 'done' : '' %>"><span class="check" aria-hidden="true"></span><% if (s.done) { %><%= s.label %> <span class="sr-only">(done)</span><% } else { %><a href="<%= s.href %>"><%= s.label %></a><% } %></li>
+    <% }) %>
+  </ol>
+</section>
+<% } %>
+
+<section class="today">
+  <div class="card today-item">
+    <div><small class="eyebrow">Flashcards due</small><strong class="num"><%= dueCards %></strong></div>
+    <% if (dueCards) { %><a href="/review" class="btn btn-small">Review now</a><% } else { %><span class="muted">All caught up</span><% } %>
+  </div>
+  <div class="card today-item">
+    <div><small class="eyebrow">Next exam</small>
+      <% if (upcoming) { %><strong><%= upcoming.code %></strong> <span class="muted">in <%= upcoming.days %> day<%= upcoming.days === 1 ? '' : 's' %></span><% } else { %><span class="muted">No exam dates set</span><% } %></div>
+    <a href="/plan" class="btn btn-small btn-ghost"><%= upcoming ? 'View schedule' : 'Add exam date' %></a>
+  </div>
+</section>
+
 <section class="stats">
   <div class="stat card"><small>Day streak</small><strong><%= stats.streak.count %></strong></div>
   <div class="stat card"><small>Average mastery</small><strong><%= knowledge %>%</strong></div>
@@ -47,7 +70,7 @@
         </div>
       <% }) %>
     </div>
-    <h2>Recent quizzes</h2>
+    <div class="section-head"><h2>Recent quizzes</h2><a href="/progress" class="muted">View progress</a></div>
     <% if (!recent.length) { %><p class="muted">No quizzes taken yet.</p><% } %>
     <ul class="list">
       <% recent.forEach(r => { const p = r.total ? Math.round(r.score / r.total * 100) : 0; %>

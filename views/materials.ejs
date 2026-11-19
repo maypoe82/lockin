@@ -1,16 +1,17 @@
 <%- include('partials/header') %>
 <div class="page-head"><h1>My notes</h1><a href="/upload" class="btn">Upload</a></div>
-<% if (!materials.length) { %><div class="card center"><p class="muted">You have not uploaded any notes yet.</p><a href="/upload" class="btn">Upload notes</a></div><% } %>
+<% if (!materials.length) { %><div class="card center empty"><h2>No notes yet</h2><p class="muted">Upload a lecture PDF to generate explanations, flashcards and quizzes.</p><a href="/upload" class="btn">Upload notes</a></div><% } %>
 <div class="grid-3">
   <% materials.forEach(m => { %>
     <div class="card material-card">
-      <span class="pill"><%= m.module_code %></span>
+      <div class="material-meta"><span class="pill"><%= m.module_code %></span>
+        <% if (m.status === 'processing') { %><span class="pill pill-info">Generating</span><% } else if (m.status === 'failed') { %><span class="pill pill-weak">Failed</span><% } %></div>
       <h3><a href="/materials/<%= m.id %>"><%= m.title %></a></h3>
-      <p class="muted"><%= m.topic_count %> topics · <%= m.question_count %> questions</p>
+      <p class="muted"><%= m.status === 'ready' ? `${m.topic_count} topics · ${m.question_count} questions` : m.status === 'processing' ? 'Study pack is being generated' : 'Generation failed. Open to retry.' %></p>
       <div class="row-actions">
-        <a href="/materials/<%= m.id %>" class="btn btn-small">Study</a>
-        <a href="/quiz/material/<%= m.id %>" class="btn btn-small btn-ghost">Quiz</a>
-        <form action="/materials/<%= m.id %>/delete" method="POST" onsubmit="return confirm('Delete this material? This cannot be undone.')"><button class="link-btn danger">Delete</button></form>
+        <a href="/materials/<%= m.id %>" class="btn btn-small"><%= m.status === 'ready' ? 'Study' : 'Open' %></a>
+        <% if (m.status === 'ready') { %><a href="/quiz/material/<%= m.id %>" class="btn btn-small btn-ghost">Quiz</a><% } %>
+        <form action="/materials/<%= m.id %>/delete" method="POST" data-confirm="Delete this material? This cannot be undone."><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button class="link-btn danger">Delete</button></form>
       </div>
     </div>
   <% }) %>

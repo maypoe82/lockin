@@ -1,0 +1,26 @@
+<% const dueN = cards.filter(c => c.due).length; %>
+<div class="deck" data-total="<%= cards.length %>">
+  <p class="muted deck-intro"><%= dueN %> of <%= cards.length %> card<%= cards.length === 1 ? '' : 's' %> due for review. Cards you know come back less often; cards you miss come back sooner.</p>
+  <% cards.forEach((f, i) => { %>
+    <div class="flashcard <%= i === 0 ? '' : 'hidden' %>" data-index="<%= i %>" data-id="<%= f.id %>" tabindex="0" role="button" aria-label="Flashcard. Press Space to reveal the answer.">
+      <div class="flashcard-inner">
+        <div class="face front">
+          <div class="card-top"><small class="muted"><%= f.topic %></small><small class="muted"><%= f.box ? `Level ${f.box} of 5` : 'New' %><%= f.due ? ' · Due' : '' %></small></div>
+          <p><%= f.front %></p><small class="muted">Click or press Space to reveal the answer</small>
+        </div>
+        <div class="face back"><div class="card-top"><small class="muted"><%= f.topic %></small></div><p><%= f.back %></p><small class="muted">Did you know it?</small></div>
+      </div>
+    </div>
+  <% }) %>
+  <div class="grade hidden" data-grade>
+    <button type="button" class="btn btn-ghost" data-known="false">Didn't know <kbd>1</kbd></button>
+    <button type="button" class="btn" data-known="true">Knew it <kbd>2</kbd></button>
+  </div>
+  <div class="deck-controls">
+    <button type="button" class="btn btn-ghost btn-small" data-deck="prev">Previous</button>
+    <span class="num" data-deck-count>1 / <%= cards.length %></span>
+    <button type="button" class="btn btn-ghost btn-small" data-deck="shuffle">Shuffle</button>
+    <button type="button" class="btn btn-ghost btn-small" data-deck="next">Skip</button>
+  </div>
+  <p class="deck-done hidden center" data-deck-done>Session complete. <a href="/review">Review other due cards</a></p>
+</div>

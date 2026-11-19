@@ -8,6 +8,11 @@
   <a href="/quiz/material/<%= material.id %>" class="btn">Take quiz</a>
 </div>
 
+<nav class="topic-jump" aria-label="Topics in this material">
+  <span class="muted">Topics:</span>
+  <% topics.forEach(t => { %><a href="#topic-<%= t.id %>" data-jump><%= t.name %></a><% }) %>
+</nav>
+
 <div class="tabs" role="tablist">
   <button class="tab active" data-tab="learn">Explanation</button>
   <button class="tab" data-tab="brainrot">Brainrot mode</button>
@@ -38,22 +43,7 @@
 
 <section class="panel hidden" data-panel="cards">
   <% if (!flashcards.length) { %><p class="muted">No flashcards for this material.</p><% } else { %>
-  <div class="deck" data-total="<%= flashcards.length %>">
-    <% flashcards.forEach((f, i) => { %>
-      <div class="flashcard <%= i === 0 ? '' : 'hidden' %>" data-index="<%= i %>">
-        <div class="flashcard-inner">
-          <div class="face front"><small class="muted"><%= f.topic %></small><p><%= f.front %></p><small class="muted">Click to reveal the answer</small></div>
-          <div class="face back"><small class="muted"><%= f.topic %></small><p><%= f.back %></p></div>
-        </div>
-      </div>
-    <% }) %>
-    <div class="deck-controls">
-      <button class="btn btn-ghost btn-small" data-deck="prev">Previous</button>
-      <span class="num" data-deck-count>1 / <%= flashcards.length %></span>
-      <button class="btn btn-ghost btn-small" data-deck="shuffle">Shuffle</button>
-      <button class="btn btn-small" data-deck="next">Next</button>
-    </div>
-  </div>
+    <%- include('partials/deck', { cards: flashcards }) %>
   <% } %>
 </section>
 <%- include('partials/footer') %>

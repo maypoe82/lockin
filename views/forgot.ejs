@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+<div class="auth card">
+  <h1>Reset your password</h1>
+  <p class="muted">Enter the email you signed up with. We will send you a link to choose a new password.</p>
+  <form action="/forgot" method="POST" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Email <input type="email" name="email" required autofocus autocomplete="email"></label>
+    <button class="btn">Send reset link</button>
+  </form>
+  <p class="muted"><a href="/login">Back to log in</a></p>
+</div>
+<%- include('partials/footer') %>
