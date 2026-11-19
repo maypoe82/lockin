@@ -1,0 +1,29 @@
+# Render Blueprint: deploys LockIn as a free Docker web service.
+# Database = TiDB Cloud Starter (free, MySQL-compatible). Fill the secret values in the Render dashboard.
+services:
+  - type: web
+    name: lockin
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Singapore
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DB_SSL
+        value: "true"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "4000"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        value: lockin
+      - key: GEMINI_API_KEY
+        sync: false

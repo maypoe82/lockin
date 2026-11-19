@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+<section class="dash-head">
+  <div>
+    <p class="eyebrow"><%= weak.length ? '🔒 LOCK IN TIME' : '🔒 LOCKED IN' %></p>
+    <h1><%= greeting %>, <%= user.name %> 👋</h1>
+    <p class="lead">
+      <% if (!materialCount) { %>Upload your first lecture notes to get started.
+      <% } else if (weak.length) { %>You have <strong><%= weak.length %></strong> topic<%= weak.length > 1 ? 's' : '' %> to lock in today.
+      <% } else if (untested) { %><strong><%= untested %></strong> topic<%= untested > 1 ? 's' : '' %> not tested yet — take a quiz.
+      <% } else { %>No weak topics right now. Academic weapon behaviour 🔥<% } %>
+    </p>
+  </div>
+  <div class="level card">
+    <div class="level-top"><span class="mono">LVL <%= stats.level.level %></span><strong><%= stats.level.name %></strong></div>
+    <div class="bar"><div class="bar-fill bar-xp" style="width: <%= stats.level.progress %>%"></div></div>
+    <p class="muted mono"><%= stats.xp %> XP<%= stats.level.next ? ` · ${stats.level.next.min - stats.xp} to ${stats.level.next.name}` : ' · max level' %></p>
+  </div>
+</section>
+
+<section class="stats">
+  <div class="stat card"><span>🔥</span><strong><%= stats.streak.count %></strong><small>day streak<%= stats.streak.count >= 7 ? ' · LOCK IN 🔥' : '' %></small></div>
+  <div class="stat card"><span>🧠</span><strong><%= knowledge %>%</strong><small>knowledge score</small></div>
+  <div class="stat card"><span>⏱️</span><strong><%= stats.studyTime %></strong><small>study time</small></div>
+  <div class="stat card"><span>❓</span><strong><%= stats.questionsAnswered %></strong><small>questions answered</small></div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>📈 Knowledge</h2>
+    <% if (!Object.keys(modules).length) { %>
+      <p class="muted">Nothing yet. <a href="/upload">Upload notes</a> and take a quiz.</p>
+    <% } %>
+    <% for (const [code, list] of Object.entries(modules)) { %>
+      <h3 class="module mono"><%= code %></h3>
+      <% list.forEach(t => { %><%- include('partials/bar', { t }) %><% }) %>
+    <% } %>
+    <% if (opp) { %>
+      <div class="opp"><span>💀 Your academic opp: <strong><%= opp.name %></strong> (<%= opp.score %>%)</span>
+        <a href="/plan" class="btn btn-small">Fix it</a></div>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>🗓️ This week</h2>
+    <% const maxMin = Math.max(30, ...stats.week.map(d => d.minutes)); %>
+    <div class="week">
+      <% stats.week.forEach(d => { %>
+        <div class="week-col" title="<%= d.minutes %> min">
+          <div class="week-bar" style="height: <%= Math.round(d.minutes / maxMin * 100) %>%"></div>
+          <small><%= d.label %></small>
+        </div>
+      <% }) %>
+    </div>
+    <h2>Recent quizzes</h2>
+    <% if (!recent.length) { %><p class="muted">No quizzes yet.</p><% } %>
+    <ul class="list">
+      <% recent.forEach(r => { const p = r.total ? Math.round(r.score / r.total * 100) : 0; %>
+        <li><a href="/quiz/result/<%= r.id %>"><%= r.mode === 'lockin' ? '🔒 ' : '' %><%= r.title %></a>
+          <span class="pill <%= p >= 80 ? 'pill-strong' : p < 60 ? 'pill-weak' : '' %>"><%= r.score %>/<%= r.total %></span></li>
+      <% }) %>
+    </ul>
+  </section>
+</div>
+<%- include('partials/footer') %>

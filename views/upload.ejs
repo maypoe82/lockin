@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+<div class="card narrow">
+  <h1>Upload notes 📄</h1>
+  <p class="muted">PDF lecture slides/notes, or paste text. LockIn splits it into topics and builds your study pack.</p>
+  <form action="/upload" method="POST" enctype="multipart/form-data" class="form" id="upload-form">
+    <div class="row">
+      <label>Module code <input name="module_code" placeholder="C237" required maxlength="20"></label>
+      <label>Title <input name="title" placeholder="REST API notes" maxlength="200"></label>
+    </div>
+    <label class="drop">
+      <input type="file" name="file" accept=".pdf,.txt,.md">
+      <span>📎 Choose a PDF (max 20 MB)</span>
+    </label>
+    <p class="muted center">— or —</p>
+    <label>Paste text <textarea name="text" rows="8" placeholder="Paste lecture notes here..."></textarea></label>
+    <button class="btn" id="upload-btn">Lock it in 🔒</button>
+    <p class="muted hidden" id="upload-wait">Cooking your study pack... this can take 20-60s for big PDFs ⏳</p>
+  </form>
+</div>
+<%- include('partials/footer') %>

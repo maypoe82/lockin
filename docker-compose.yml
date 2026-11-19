@@ -1,0 +1,41 @@
+# Run everything locally:  docker compose up --build   →  http://localhost:3000
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${DB_NAME:-lockin}
+      MYSQL_USER: ${DB_USER:-lockin}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-lockin}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro   # creates tables on first start
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpass}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    image: ${APP_IMAGE:-lockin:latest}   # on EC2 set APP_IMAGE=yourname/lockin:latest in .env
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-lockin}
+      DB_USER: ${DB_USER:-lockin}
+      DB_PASSWORD: ${DB_PASSWORD:-lockin}
+      TZ: Asia/Singapore
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

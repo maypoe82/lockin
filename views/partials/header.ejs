@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · LockIn</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body<% if (typeof studyPage !== 'undefined' && studyPage) { %> data-study="1"<% } %>>
+  <nav class="nav">
+    <a href="/" class="logo">🔒 LOCK<span>IN</span></a>
+    <% if (user) { %>
+      <div class="nav-links">
+        <a href="/" class="<%= path === '/' ? 'active' : '' %>">Dashboard</a>
+        <a href="/materials" class="<%= path.startsWith('/materials') ? 'active' : '' %>">My notes</a>
+        <a href="/plan" class="<%= path === '/plan' ? 'active' : '' %>">Lock-In Plan</a>
+        <a href="/upload" class="btn btn-small">+ Upload</a>
+        <form action="/logout" method="POST"><button class="link-btn">Log out</button></form>
+      </div>
+    <% } else { %>
+      <div class="nav-links"><a href="/login">Log in</a><a href="/register" class="btn btn-small">Sign up</a></div>
+    <% } %>
+  </nav>
+  <% if (aiMode === 'mock' && user) { %>
+    <div class="banner">Demo AI mode — add a <code>GEMINI_API_KEY</code> or <code>OPENAI_API_KEY</code> in <code>.env</code> for real AI explanations.</div>
+  <% } %>
+  <main class="container">
+  <% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= flash.msg %></div><% } %>

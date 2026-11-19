@@ -1,0 +1,21 @@
+<%- include('partials/header') %>
+<div class="page-head"><div><h1>Your Lock-In Plan 🔒</h1><p class="lead">Only revise what you're actually weak at. Tick steps off as you go.</p></div></div>
+<% if (!totalTopics) { %>
+  <div class="card center"><p>No topics yet.</p><a href="/upload" class="btn">Upload notes</a></div>
+<% } else if (!plan.length) { %>
+  <div class="card center"><h2>No weak topics 🔥</h2><p class="muted">Everything you've been tested on is above 60%. Take more quizzes to keep it that way.</p><a href="/materials" class="btn">Go to my notes</a></div>
+<% } %>
+<% plan.forEach(p => { %>
+  <section class="card plan" data-plan="<%= p.topic.id %>">
+    <div class="topic-head">
+      <div><span class="pill mono"><%= p.topic.module_code %></span><h2>🚨 <%= p.topic.name %></h2></div>
+      <span class="pill pill-weak"><%= p.topic.score %>% 💀</span>
+    </div>
+    <ol class="steps">
+      <% p.steps.forEach((s, i) => { %>
+        <li><label><input type="checkbox" data-step="<%= p.topic.id %>-<%= i %>"><a href="<%= s.href %>"><%= s.label %></a></label></li>
+      <% }) %>
+    </ol>
+  </section>
+<% }) %>
+<%- include('partials/footer') %>

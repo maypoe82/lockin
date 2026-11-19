@@ -1,0 +1,24 @@
+<%- include('partials/header') %>
+<div class="page-head">
+  <div>
+    <span class="pill mono"><%= material.module_code %></span>
+    <h1><%= heading %></h1>
+    <p class="muted"><%= questions.length %> questions<%= mode === 'lockin' ? ' · picked from what you haven\'t got right yet' : '' %></p>
+  </div>
+</div>
+<form action="/quiz/submit" method="POST" class="quiz" id="quiz-form">
+  <% questions.forEach((q, i) => { %>
+    <fieldset class="card question">
+      <legend><span class="mono muted">Q<%= i + 1 %> · <%= q.difficulty %></span></legend>
+      <p class="q-text"><%= q.question %></p>
+      <% q.options.forEach((opt, j) => { %>
+        <label class="option">
+          <input type="radio" name="q_<%= q.id %>" value="<%= j %>" required>
+          <span class="opt-letter mono"><%= 'ABCD'[j] %></span><span><%= opt %></span>
+        </label>
+      <% }) %>
+    </fieldset>
+  <% }) %>
+  <button class="btn btn-big">Submit 🔒</button>
+</form>
+<%- include('partials/footer') %>

@@ -1,0 +1,138 @@
+const router = require('express').Router();
+const multer = require('multer');
+const db = require('../config/db');
+const { requireLogin } = require('../middleware/auth');
+const { pdfToText } = require('../services/pdf');
+const ai = require('../services/ai');
+const A = require('../services/analytics');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (req, file, cb) => cb(null, file.mimetype === 'application/pdf' || /\.(txt|md)$/i.test(file.originalname)),
+});
+
+router.use(['/upload', '/materials', '/mistakes'], requireLogin);
+
+router.get('/upload', (req, res) => res.render('upload', { title: 'Upload notes' }));
+
+router.post('/upload', upload.single('file'), async (req, res, next) => {
+  const uid = req.session.user.id;
+  try {
+    let text = (req.body.text || '').trim();
+    if (req.file) {
+      text = req.file.mimetype === 'application/pdf' ? await pdfToText(req.file.buffer) : req.file.buffer.toString('utf8');
+    }
+    if (text.length < 200) {
+      req.session.flash = { type: 'error', msg: "Not enough text to work with 💀 (if it's a scanned PDF, it has no selectable text)." };
+      return res.redirect('/upload');
+    }
+    const moduleCode = (req.body.module_code || 'GENERAL').trim().toUpperCase().slice(0, 20);
+    const title = (req.body.title || req.file?.originalname || 'My notes').trim().slice(0, 200);
+
+    const pack = await ai.generateStudyPack(text, moduleCode);
+    const materialId = await savePack(uid, moduleCode, title, text, pack);
+
+    req.session.flash = { type: 'success', msg: `Locked in ${pack.topics.length} topics from "${title}" 🔒` };
+    res.redirect(`/materials/${materialId}`);
+  } catch (e) {
+    console.error(e);
+    req.session.flash = { type: 'error', msg: `AI couldn't process that: ${e.message}` };
+    res.redirect('/upload');
+  }
+});
+
+async function savePack(userId, moduleCode, title, text, pack) {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+    const [m] = await conn.query(
+      'INSERT INTO materials (user_id, module_code, title, summary, raw_text) VALUES (?, ?, ?, ?, ?)',
+      [userId, moduleCode, title, pack.summary, text]
+    );
+    for (const t of pack.topics) {
+      const [tr] = await conn.query(
+        'INSERT INTO topics (material_id, name, learn, brainrot, notes) VALUES (?, ?, ?, ?, ?)',
+        [m.insertId, t.name, t.learn, t.brainrot, JSON.stringify(t.notes)]
+      );
+      for (const f of t.flashcards) {
+        await conn.query('INSERT INTO flashcards (material_id, topic_id, front, back) VALUES (?, ?, ?, ?)', [m.insertId, tr.insertId, f.front, f.back]);
+      }
+      for (const q of t.questions) {
+        await conn.query(
+          'INSERT INTO questions (material_id, topic_id, difficulty, question, options, answer_index, explanation) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [m.insertId, tr.insertId, q.difficulty, q.question, JSON.stringify(q.options), q.answer_index, q.explanation]
+        );
+      }
+    }
+    await conn.commit();
+    return m.insertId;
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+router.get('/materials', async (req, res, next) => {
+  try {
+    const [materials] = await db.query(
+      `SELECT m.id, m.module_code, m.title, m.created_at,
+              (SELECT COUNT(*) FROM topics t WHERE t.material_id = m.id) AS topic_count,
+              (SELECT COUNT(*) FROM questions q WHERE q.material_id = m.id) AS question_count
+         FROM materials m WHERE m.user_id = ? ORDER BY m.id DESC`, [req.session.user.id]);
+    res.render('materials', { title: 'My notes', materials });
+  } catch (e) { next(e); }
+});
+
+router.get('/materials/:id', async (req, res, next) => {
+  try {
+    const uid = req.session.user.id;
+    const [[material]] = await db.query('SELECT * FROM materials WHERE id = ? AND user_id = ?', [req.params.id, uid]);
+    if (!material) return res.status(404).render('error', { title: '404', message: 'Material not found 💀' });
+    const [topics] = await db.query('SELECT * FROM topics WHERE material_id = ? ORDER BY id', [material.id]);
+    const [flashcards] = await db.query(
+      'SELECT f.*, t.name AS topic FROM flashcards f JOIN topics t ON t.id = f.topic_id WHERE f.material_id = ? ORDER BY f.id', [material.id]);
+    const scores = await A.topicScores(uid, material.id);
+    const scoreById = Object.fromEntries(scores.map((s) => [s.id, s]));
+    topics.forEach((t) => {
+      t.notes = typeof t.notes === 'string' ? JSON.parse(t.notes) : t.notes || [];
+      t.stats = scoreById[t.id];
+    });
+    res.render('material', { title: material.title, material, topics, flashcards });
+  } catch (e) { next(e); }
+});
+
+router.post('/materials/:id/delete', async (req, res, next) => {
+  try {
+    await db.query('DELETE FROM materials WHERE id = ? AND user_id = ?', [req.params.id, req.session.user.id]);
+    req.session.flash = { type: 'success', msg: 'Deleted.' };
+    res.redirect('/materials');
+  } catch (e) { next(e); }
+});
+
+// Questions you got wrong most recently (and haven't since got right).
+router.get('/mistakes', async (req, res, next) => {
+  try {
+    const uid = req.session.user.id;
+    const params = [uid];
+    let filter = '';
+    if (req.query.topic) { filter = 'AND q.topic_id = ?'; params.push(req.query.topic); }
+    const [rows] = await db.query(
+      `SELECT q.*, t.name AS topic, an.chosen_index, an.correct
+         FROM answers an
+         JOIN quiz_attempts qa ON qa.id = an.attempt_id
+         JOIN questions q ON q.id = an.question_id
+         JOIN topics t ON t.id = q.topic_id
+        WHERE qa.user_id = ? ${filter}
+          AND an.id = (SELECT MAX(a2.id) FROM answers a2 JOIN quiz_attempts qa2 ON qa2.id = a2.attempt_id
+                        WHERE a2.question_id = q.id AND qa2.user_id = qa.user_id)
+          AND an.correct = 0
+        ORDER BY an.id DESC LIMIT 50`, params);
+    rows.forEach((r) => { r.options = typeof r.options === 'string' ? JSON.parse(r.options) : r.options; });
+    res.render('mistakes', { title: 'Mistakes', mistakes: rows, topicId: req.query.topic || null });
+  } catch (e) { next(e); }
+});
+
+module.exports = router;

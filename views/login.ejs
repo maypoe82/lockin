@@ -1,0 +1,11 @@
+<%- include('partials/header') %>
+<div class="auth card">
+  <h1>Welcome back 🔒</h1>
+  <form action="/login" method="POST" class="form">
+    <label>Email <input type="email" name="email" required autofocus></label>
+    <label>Password <input type="password" name="password" required></label>
+    <button class="btn">Log in</button>
+  </form>
+  <p class="muted">New here? <a href="/register">Make an account</a></p>
+</div>
+<%- include('partials/footer') %>

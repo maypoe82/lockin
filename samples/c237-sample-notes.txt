@@ -1,0 +1,16 @@
+C237 Software Application Development - Week 5 Notes
+
+Node.js
+Node.js is a JavaScript runtime built on Chrome's V8 engine that lets developers run JavaScript on the server. It uses an event-driven, non-blocking I/O model, which makes it lightweight and efficient for handling many connections at once. Node.js comes with npm, the package manager used to install libraries such as Express. A single thread handles requests using the event loop, so long-running synchronous code can block every other request.
+
+Express
+Express is a minimal web framework for Node.js that makes it easier to build web servers and APIs. Routes in Express map an HTTP method and a URL path to a handler function, for example app.get('/users', handler). The request object contains information such as params, query strings and the body, while the response object is used to send data back with res.send, res.json or res.render. Express applications are started by calling app.listen with a port number.
+
+Middleware
+Middleware is a function that executes between receiving a request and sending a response. Each middleware function receives the request object, the response object and a next function. Calling next passes control to the following middleware in the stack, and forgetting to call next leaves the request hanging. Common uses of middleware include logging, parsing request bodies with express.urlencoded, serving static files with express.static, and checking whether a user is logged in before allowing access to a route.
+
+EJS
+EJS stands for Embedded JavaScript templating and is used to generate HTML pages on the server. Express renders EJS views with res.render, passing an object of data that the template can display. The tag with an equals sign outputs an escaped value, while the tag with a minus sign outputs raw unescaped HTML. Partials such as a shared header and footer are added with the include function so that the same layout is reused across pages.
+
+REST API
+A REST API allows applications to communicate over HTTP using standard methods on resources identified by URLs. GET retrieves data from the server, POST creates a new resource, PUT updates an existing resource and DELETE removes a resource. REST APIs are stateless, which means every request must contain all the information the server needs to process it. Responses usually return data in JSON format along with a status code such as 200 for success, 201 for created and 404 for not found.

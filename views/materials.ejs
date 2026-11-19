@@ -1,0 +1,18 @@
+<%- include('partials/header') %>
+<div class="page-head"><h1>My notes</h1><a href="/upload" class="btn">+ Upload</a></div>
+<% if (!materials.length) { %><div class="card center"><p>No notes yet.</p><a href="/upload" class="btn">Upload your first PDF</a></div><% } %>
+<div class="grid-3">
+  <% materials.forEach(m => { %>
+    <div class="card material-card">
+      <span class="pill mono"><%= m.module_code %></span>
+      <h3><a href="/materials/<%= m.id %>"><%= m.title %></a></h3>
+      <p class="muted"><%= m.topic_count %> topics · <%= m.question_count %> questions</p>
+      <div class="row-actions">
+        <a href="/materials/<%= m.id %>" class="btn btn-small">Study</a>
+        <a href="/quiz/material/<%= m.id %>" class="btn btn-small btn-ghost">Quiz</a>
+        <form action="/materials/<%= m.id %>/delete" method="POST" onsubmit="return confirm('Delete this material?')"><button class="link-btn danger">Delete</button></form>
+      </div>
+    </div>
+  <% }) %>
+</div>
+<%- include('partials/footer') %>

@@ -1,0 +1,17 @@
+<%- include('partials/header', { studyPage: true }) %>
+<div class="page-head"><div><h1>Review mistakes</h1><p class="lead">Questions you got wrong and haven't got right since.</p></div></div>
+<% if (!mistakes.length) { %><div class="card center"><p>No outstanding mistakes 🔥</p></div><% } %>
+<% mistakes.forEach(r => { %>
+  <div class="card review review-wrong">
+    <p class="muted mono"><%= r.topic %> · <%= r.difficulty %></p>
+    <p class="q-text"><%= r.question %></p>
+    <ul class="answers">
+      <% r.options.forEach((o, j) => { %>
+        <li class="<%= j === r.answer_index ? 'ans-right' : j === r.chosen_index ? 'ans-wrong' : '' %>"><span class="mono"><%= 'ABCD'[j] %>.</span> <%= o %> <%= j === r.answer_index ? '✅' : j === r.chosen_index ? '❌ your answer' : '' %></li>
+      <% }) %>
+    </ul>
+    <% if (r.explanation) { %><p class="explain">💡 <%= r.explanation %></p><% } %>
+  </div>
+<% }) %>
+<% if (topicId && mistakes.length) { %><a class="btn" href="/quiz/lockin?topic=<%= topicId %>&difficulty=medium">Try 5 medium questions</a><% } %>
+<%- include('partials/footer') %>

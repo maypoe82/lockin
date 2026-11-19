@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+<div class="auth card">
+  <h1>Join LockIn</h1>
+  <form action="/register" method="POST" class="form">
+    <label>Name <input name="name" required autofocus maxlength="80"></label>
+    <label>Email <input type="email" name="email" required></label>
+    <label>Password <input type="password" name="password" required minlength="6"></label>
+    <button class="btn">Start locking in</button>
+  </form>
+  <p class="muted">Already locked in? <a href="/login">Log in</a></p>
+</div>
+<%- include('partials/footer') %>

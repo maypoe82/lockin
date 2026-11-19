@@ -1,0 +1,46 @@
+<%- include('partials/header') %>
+<section class="result-head card">
+  <div>
+    <p class="eyebrow mono"><%= attempt.module_code %> · <%= attempt.mode === 'lockin' ? 'LOCK-IN QUIZ' : 'ASSESSMENT' %></p>
+    <h1 class="score"><%= attempt.score %>/<%= attempt.total %> <span class="muted">— <%= pct %>%</span></h1>
+    <p class="lead"><%= pct >= 80 ? 'Academic weapon behaviour 🔥' : pct >= 60 ? 'Decent. Not locked in yet tho.' : 'It\'s giving... revision needed 💀' %></p>
+  </div>
+  <% if (awards.length) { %>
+    <div class="awards"><% awards.forEach(a => { %><div class="award mono">+<%= a.amount %> XP <small><%= a.reason %></small></div><% }) %></div>
+  <% } %>
+</section>
+
+<% alerts.forEach(a => { %>
+  <div class="alert card">
+    <h2>🔒 LOCK IN ALERT</h2>
+    <p>You got <strong><%= a.wrong %></strong> <%= a.name %> question<%= a.wrong > 1 ? 's' : '' %> wrong.</p>
+    <p>Recommended revision: <strong><%= a.minutes %> minutes</strong></p>
+    <div class="row-actions">
+      <a class="btn btn-small" href="/materials/<%= attempt.material_id %>#topic-<%= a.id %>">Review <%= a.name %></a>
+      <a class="btn btn-small btn-ghost" href="/quiz/lockin?topic=<%= a.id %>&difficulty=easy">5 easy questions</a>
+    </div>
+  </div>
+<% }) %>
+
+<section class="card">
+  <h2>By topic</h2>
+  <% topics.forEach(t => { %><%- include('partials/bar', { t: { name: `${t.name} (${t.right}/${t.total})`, score: t.pct } }) %><% }) %>
+</section>
+
+<section>
+  <h2>Review answers</h2>
+  <% rows.forEach((r, i) => { %>
+    <div class="card review <%= r.correct ? 'review-right' : 'review-wrong' %>">
+      <p class="muted mono">Q<%= i + 1 %> · <%= r.topic %> · <%= r.difficulty %></p>
+      <p class="q-text"><%= r.question %></p>
+      <ul class="answers">
+        <% r.options.forEach((o, j) => { %>
+          <li class="<%= j === r.answer_index ? 'ans-right' : j === r.chosen_index ? 'ans-wrong' : '' %>"><span class="mono"><%= 'ABCD'[j] %>.</span> <%= o %> <%= j === r.answer_index ? '✅' : j === r.chosen_index ? '❌' : '' %></li>
+        <% }) %>
+      </ul>
+      <% if (r.explanation) { %><p class="explain">💡 <%= r.explanation %></p><% } %>
+    </div>
+  <% }) %>
+</section>
+<div class="row-actions"><a href="/plan" class="btn">See my Lock-In Plan</a><a href="/" class="btn btn-ghost">Dashboard</a></div>
+<%- include('partials/footer') %>
