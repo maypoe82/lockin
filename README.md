@@ -2,7 +2,7 @@
 
 > Stop scrolling. Start locking in.
 
-LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it into simple explanations, **Brainrot Mode** explanations, quick notes, flashcards and quizzes. It then tracks which topics you actually understand and builds a **Lock-In Plan** for the ones you don't.
+LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it into simple explanations, **Brainrot Mode** explanations, quick notes, flashcards and quizzes. It then tracks which topics you actually understand and builds a **Revision Plan** for the ones you don't.
 
 **It's not just an AI summariser. The point is AI + adaptive learning + analytics.**
 
@@ -17,7 +17,7 @@ LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it int
 | ❓ **Quiz** | Up to 15 questions, spread across every topic, easy / medium / hard |
 | 🚨 **Lock In Alert** | After a quiz: "You got 3 Middleware questions wrong. Recommended revision: 12 minutes" |
 | 📈 **Topic mastery** | Each topic's score uses your **last 10 answers**, so improvement shows quickly |
-| 🔒 **Lock-In Plan** | For each weak topic (<60%): review → 5 easy → 5 medium → review mistakes → retake |
+| 🔒 **Revision Plan** | For each weak topic (<60%): review → 5 easy → 5 medium → review mistakes → retake |
 | 🤖 **Adaptive questions** | Lock-In quizzes use questions you haven't got right yet. If there aren't enough, the AI generates new ones for that topic |
 | 🎮 **Gamification** | XP (+50 per quiz, +100 per mastered topic, +30 per 30 min studied), 5 levels (Distracted → Final Boss 💀), daily streaks |
 | 📊 **Dashboard** | Streak, knowledge score, study time, questions answered, per-module knowledge bars, weekly chart, "your academic opp" |
@@ -76,7 +76,7 @@ npm run dev                   # http://localhost:3000 (auto-restarts on save)
 
 Without a key, LockIn still runs: demo mode builds topics from your headings and makes fill-in-the-blank questions. That's fine for testing the flow, but the Brainrot explanations are only good with a real model.
 
-**Try it:** upload `samples/c237-sample-notes.pdf`, take the quiz, then get some Middleware questions wrong on purpose and check the dashboard and Lock-In Plan.
+**Try it:** upload `samples/c237-sample-notes.pdf`, take the quiz, then get some Middleware questions wrong on purpose and check the dashboard and Revision Plan.
 
 ## Tests
 
@@ -97,7 +97,7 @@ db/init.js             npm run db:init
 middleware/auth.js     requireLogin + shared view locals
 routes/
   auth.js              register / login / logout
-  dashboard.js         dashboard, Lock-In Plan, study-time API
+  dashboard.js         dashboard, Revision Plan, study-time API
   materials.js         upload → AI → save, study page, mistakes
   quiz.js              full quiz, adaptive Lock-In quiz, grading, results + alerts
 services/
@@ -116,7 +116,7 @@ Dockerfile, docker-compose.yml, Jenkinsfile
 1. **Every answer is stored** with its topic and difficulty.
 2. **Topic score** = % correct over your last 10 answers on that topic (`services/analytics.js → topicScores`).
    - ≥ 80% = strong 🔥 (first time also gives +100 XP)
-   - < 60% = weak 💀 and goes into your Lock-In Plan
+   - < 60% = weak 💀 and goes into your Revision Plan
 3. **Lock-In quiz** (`routes/quiz.js → /quiz/lockin`) picks 5 questions for one topic and difficulty, starting with ones you've never got right. If fewer than 5 are left, it asks the AI for new ones (`generateMoreQuestions`) and saves them with `source = 'adaptive'`.
 4. **Revision time** = `(100 − score) / 5`, kept between 5 and 15 minutes.
 
@@ -141,7 +141,7 @@ After that, every push to `main` runs **checkout → test → docker build → p
 - [x] Brainrot explanations
 - [x] Performance tracking per topic
 - [x] Adaptive quizzes + AI-generated questions for weak topics
-- [x] Personalised Lock-In Plan
+- [x] Personalised Revision Plan
 - [ ] AI study plan across modules with exam dates
 - [ ] Spaced repetition for flashcards
 - [ ] Leaderboards / study with friends

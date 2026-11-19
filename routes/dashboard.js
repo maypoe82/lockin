@@ -40,7 +40,7 @@ router.get('/plan', requireLogin, async (req, res, next) => {
   try {
     const scores = await A.topicScores(req.session.user.id);
     const weak = A.weakTopics(scores);
-    res.render('plan', { title: 'Lock-In Plan', plan: A.buildPlan(weak), totalTopics: scores.length });
+    res.render('plan', { title: 'Revision Plan', plan: A.buildPlan(weak), totalTopics: scores.length });
   } catch (e) { next(e); }
 });
 
