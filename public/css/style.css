@@ -313,3 +313,7 @@ kbd { font-family: inherit; font-size: .72rem; border: 1px solid currentColor; b
   .today { grid-template-columns: 1fr; }
   .schedule li { grid-template-columns: 1fr; gap: .1rem; }
 }
+.stats-3 { grid-template-columns: repeat(3, 1fr); }
+.onboarding .checklist { margin: .8rem 0 1.2rem; }
+@media (max-width: 800px) { .stats-3 { grid-template-columns: 1fr 1fr 1fr; } .stats-3 .stat strong { font-size: 1.3rem; } }
+.grid-2 { align-items: start; }

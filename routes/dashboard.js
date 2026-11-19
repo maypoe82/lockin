@@ -48,7 +48,7 @@ router.get('/', (req, res, next) => {
     res.render('dashboard', {
       title: 'Dashboard', greeting: greeting(), stats, modules, weak, knowledge,
       opp: weak[0] || null, recent, materialCount, dueCards, upcoming,
-      onboarding: onboarding.every((s) => s.done) ? null : onboarding,
+      onboarding,
       untested: scores.filter((t) => t.status === 'new').length,
     });
   } catch (e) { next(e); }
