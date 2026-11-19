@@ -1,7 +1,7 @@
 // Blocks pages that need a logged-in user.
 function requireLogin(req, res, next) {
   if (req.session.user) return next();
-  req.session.flash = { type: 'error', msg: 'Log in first bestie 🔒' };
+  req.session.flash = { type: 'error', msg: 'Please log in to continue.' };
   res.redirect('/login');
 }
 

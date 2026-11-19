@@ -24,7 +24,7 @@ function startQuiz(req, res, { material, questions, mode, heading, topic }) {
 router.get('/quiz/material/:id', async (req, res, next) => {
   try {
     const material = await ownedMaterial(req.params.id, req.session.user.id);
-    if (!material) return res.status(404).render('error', { title: '404', message: 'Material not found 💀' });
+    if (!material) return res.status(404).render('error', { title: '404', message: 'Material not found.' });
     const [all] = await db.query('SELECT * FROM questions WHERE material_id = ?', [material.id]);
     // round-robin by topic so every topic gets tested
     const byTopic = {};
@@ -33,7 +33,7 @@ router.get('/quiz/material/:id', async (req, res, next) => {
     const buckets = Object.values(byTopic);
     while (picked.length < 15 && buckets.some((b) => b.length)) for (const b of buckets) if (b.length && picked.length < 15) picked.push(b.shift());
     if (!picked.length) {
-      req.session.flash = { type: 'error', msg: 'No questions for this material yet 💀' };
+      req.session.flash = { type: 'error', msg: 'There are no questions for this material yet.' };
       return res.redirect(`/materials/${material.id}`);
     }
     startQuiz(req, res, { material, questions: shuffle(picked), mode: 'full', heading: `Quiz: ${material.title}` });
@@ -48,7 +48,7 @@ router.get('/quiz/lockin', async (req, res, next) => {
     const difficulty = ['easy', 'medium', 'hard'].includes(req.query.difficulty) ? req.query.difficulty : 'easy';
     const [[topic]] = await db.query(
       'SELECT t.* FROM topics t JOIN materials m ON m.id = t.material_id WHERE t.id = ? AND m.user_id = ?', [req.query.topic, uid]);
-    if (!topic) return res.status(404).render('error', { title: '404', message: 'Topic not found 💀' });
+    if (!topic) return res.status(404).render('error', { title: '404', message: 'Topic not found.' });
     topic.notes = parse(topic.notes) || [];
 
     const want = 5;
@@ -85,7 +85,7 @@ router.get('/quiz/lockin', async (req, res, next) => {
       return res.redirect('/plan');
     }
     const material = await ownedMaterial(topic.material_id, uid);
-    startQuiz(req, res, { material, questions: ordered, mode: 'lockin', topic, heading: `🔒 Lock-In: ${topic.name} (${difficulty})` });
+    startQuiz(req, res, { material, questions: ordered, mode: 'lockin', topic, heading: `Practice: ${topic.name} (${difficulty})` });
   } catch (e) { next(e); }
 });
 
@@ -123,7 +123,7 @@ router.post('/quiz/submit', async (req, res, next) => {
     for (const t of scores) {
       if (t.status === 'strong' && !t.mastered) {
         await db.query('UPDATE topics SET mastered = 1 WHERE id = ?', [t.id]);
-        awards.push(await A.awardXP(uid, A.XP.TOPIC_MASTERED, `Mastered ${t.name} 🔥`));
+        awards.push(await A.awardXP(uid, A.XP.TOPIC_MASTERED, `Mastered ${t.name}`));
       }
     }
     req.session.awards = { [attempt.insertId]: awards };
@@ -137,7 +137,7 @@ router.get('/quiz/result/:id', async (req, res, next) => {
     const [[attempt]] = await db.query(
       'SELECT qa.*, m.title, m.module_code FROM quiz_attempts qa JOIN materials m ON m.id = qa.material_id WHERE qa.id = ? AND qa.user_id = ?',
       [req.params.id, uid]);
-    if (!attempt) return res.status(404).render('error', { title: '404', message: 'Result not found 💀' });
+    if (!attempt) return res.status(404).render('error', { title: '404', message: 'Result not found.' });
 
     const [rows] = await db.query(
       `SELECT an.chosen_index, an.correct, q.*, t.name AS topic
@@ -156,7 +156,7 @@ router.get('/quiz/result/:id', async (req, res, next) => {
       ...b, wrong: b.total - b.right, pct: Math.round((b.right / b.total) * 100), overall: overall[b.id]?.score,
     })).sort((a, b) => a.pct - b.pct);
 
-    // 🔒 LOCK IN ALERTs: topics where you dropped 2+ questions, or bombed a small set
+    // Revision alerts: topics where you dropped 2+ questions, or bombed a small set
     const alerts = topics
       .filter((t) => t.wrong >= 2 || (t.wrong >= 1 && t.pct < A.WEAK_BELOW))
       .map((t) => ({ ...t, minutes: A.revisionMinutes(t.overall ?? t.pct) }));

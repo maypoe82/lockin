@@ -1,18 +1,18 @@
 <%- include('partials/header', { studyPage: true }) %>
 <div class="page-head">
   <div>
-    <span class="pill mono"><%= material.module_code %></span>
+    <span class="pill"><%= material.module_code %></span>
     <h1><%= material.title %></h1>
     <p class="lead"><%= material.summary %></p>
   </div>
-  <a href="/quiz/material/<%= material.id %>" class="btn">❓ Take quiz</a>
+  <a href="/quiz/material/<%= material.id %>" class="btn">Take quiz</a>
 </div>
 
 <div class="tabs" role="tablist">
-  <button class="tab active" data-tab="learn">🧠 Learn</button>
-  <button class="tab" data-tab="brainrot">💀 Brainrot</button>
-  <button class="tab" data-tab="notes">📝 Quick Notes</button>
-  <button class="tab" data-tab="cards">🃏 Flashcards (<%= flashcards.length %>)</button>
+  <button class="tab active" data-tab="learn">Explanation</button>
+  <button class="tab" data-tab="brainrot">Brainrot mode</button>
+  <button class="tab" data-tab="notes">Key points</button>
+  <button class="tab" data-tab="cards">Flashcards (<%= flashcards.length %>)</button>
 </div>
 
 <% ['learn', 'brainrot', 'notes'].forEach(mode => { %>
@@ -22,14 +22,14 @@
       <div class="topic-head">
         <h2><%= t.name %></h2>
         <% if (s && s.score !== null) { %>
-          <span class="pill <%= s.status === 'strong' ? 'pill-strong' : s.status === 'weak' ? 'pill-weak' : '' %>"><%= s.score %>%<%= s.status === 'weak' ? ' 💀' : s.status === 'strong' ? ' 🔥' : '' %></span>
-        <% } else { %><span class="pill">not tested</span><% } %>
+          <span class="pill <%= s.status === 'strong' ? 'pill-strong' : s.status === 'weak' ? 'pill-weak' : '' %>"><%= s.score %>% mastery</span>
+        <% } else { %><span class="pill">Not assessed</span><% } %>
       </div>
       <% if (mode === 'learn') { %><p><%= t.learn %></p><% } %>
       <% if (mode === 'brainrot') { %><p class="brainrot"><%= t.brainrot %></p><% } %>
       <% if (mode === 'notes') { %><ul class="notes"><% t.notes.forEach(n => { %><li><%= n %></li><% }) %></ul><% } %>
       <% if (s && s.status === 'weak') { %>
-        <a class="btn btn-small" href="/quiz/lockin?topic=<%= t.id %>&difficulty=easy">🔒 Lock in on this</a>
+        <a class="btn btn-small" href="/quiz/lockin?topic=<%= t.id %>&difficulty=easy">Practise this topic</a>
       <% } %>
     </article>
   <% }) %>
@@ -37,21 +37,21 @@
 <% }) %>
 
 <section class="panel hidden" data-panel="cards">
-  <% if (!flashcards.length) { %><p class="muted">No flashcards.</p><% } else { %>
+  <% if (!flashcards.length) { %><p class="muted">No flashcards for this material.</p><% } else { %>
   <div class="deck" data-total="<%= flashcards.length %>">
     <% flashcards.forEach((f, i) => { %>
       <div class="flashcard <%= i === 0 ? '' : 'hidden' %>" data-index="<%= i %>">
         <div class="flashcard-inner">
-          <div class="face front"><small class="muted"><%= f.topic %></small><p><%= f.front %></p><small class="muted">tap to flip</small></div>
+          <div class="face front"><small class="muted"><%= f.topic %></small><p><%= f.front %></p><small class="muted">Click to reveal the answer</small></div>
           <div class="face back"><small class="muted"><%= f.topic %></small><p><%= f.back %></p></div>
         </div>
       </div>
     <% }) %>
     <div class="deck-controls">
-      <button class="btn btn-ghost btn-small" data-deck="prev">← Prev</button>
-      <span class="mono" data-deck-count>1 / <%= flashcards.length %></span>
+      <button class="btn btn-ghost btn-small" data-deck="prev">Previous</button>
+      <span class="num" data-deck-count>1 / <%= flashcards.length %></span>
       <button class="btn btn-ghost btn-small" data-deck="shuffle">Shuffle</button>
-      <button class="btn btn-small" data-deck="next">Next →</button>
+      <button class="btn btn-small" data-deck="next">Next</button>
     </div>
   </div>
   <% } %>

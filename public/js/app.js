@@ -1,5 +1,17 @@
-// LockIn front-end: tabs, flashcards, study timer, plan checklist.
+// LockIn front-end: theme switch, tabs, flashcards, study timer, plan checklist.
 (function () {
+  // Light / dark mode switch (choice is remembered in this browser)
+  const root = document.documentElement;
+  const toggle = document.getElementById('theme-toggle');
+  const label = document.getElementById('theme-label');
+  const sync = () => { if (label) label.textContent = root.dataset.theme === 'dark' ? 'Light mode' : 'Dark mode'; };
+  sync();
+  if (toggle) toggle.addEventListener('click', () => {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('lockin-theme', root.dataset.theme); } catch (e) {}
+    sync();
+  });
+
   // Tabs (Learn / Brainrot / Notes / Flashcards)
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {

@@ -1,4 +1,4 @@
-// 🔒 LockIn — Stop scrolling. Start locking in.
+// LockIn - adaptive study platform
 require('dotenv').config({ quiet: true });
 process.env.TZ = process.env.TZ || 'Asia/Singapore';
 
@@ -34,10 +34,10 @@ app.use(require('./routes/dashboard'));
 app.use(require('./routes/materials'));
 app.use(require('./routes/quiz'));
 
-app.use((req, res) => res.status(404).render('error', { title: '404', message: "This page isn't real 💀" }));
+app.use((req, res) => res.status(404).render('error', { title: '404', message: 'The page you requested does not exist.' }));
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).render('error', { title: 'Error', message: err.message || 'Something broke 💀' });
+  res.status(500).render('error', { title: 'Error', message: 'Something went wrong. Please try again.' });
 });
 
 // Create tables on startup if they don't exist (so cloud deploys need no manual setup).
@@ -52,8 +52,8 @@ async function ensureSchema() {
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
   ensureSchema()
-    .catch((e) => console.error('⚠️  Could not set up database tables:', e.message))
-    .finally(() => app.listen(PORT, () => console.log(`🔒 LockIn running on http://localhost:${PORT} (AI: ${ai.provider()})`)));
+    .catch((e) => console.error('Could not set up database tables:', e.message))
+    .finally(() => app.listen(PORT, () => console.log(`LockIn running on http://localhost:${PORT} (AI: ${ai.provider()})`)));
 }
 
 module.exports = app;

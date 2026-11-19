@@ -1,6 +1,6 @@
-# 🔒 LockIn
+# LockIn
 
-> Stop scrolling. Start locking in.
+> Adaptive study platform for university students.
 
 LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it into simple explanations, **Brainrot Mode** explanations, quick notes, flashcards and quizzes. It then tracks which topics you actually understand and builds a **Revision Plan** for the ones you don't.
 
@@ -10,17 +10,18 @@ LockIn is an AI-powered study platform. Upload a lecture PDF and it turns it int
 
 | | |
 |---|---|
-| 🧠 **Learn** | AI splits your notes into topics and explains each one simply |
-| 💀 **Brainrot Mode** | Same topic, explained in Gen-Z slang (still technically correct) |
-| 📝 **Quick Notes** | Must-know bullet points per topic |
-| 🃏 **Flashcards** | Flip cards with keyboard controls (← → space) |
-| ❓ **Quiz** | Up to 15 questions, spread across every topic, easy / medium / hard |
-| 🚨 **Lock In Alert** | After a quiz: "You got 3 Middleware questions wrong. Recommended revision: 12 minutes" |
-| 📈 **Topic mastery** | Each topic's score uses your **last 10 answers**, so improvement shows quickly |
-| 🔒 **Revision Plan** | For each weak topic (<60%): review → 5 easy → 5 medium → review mistakes → retake |
-| 🤖 **Adaptive questions** | Lock-In quizzes use questions you haven't got right yet. If there aren't enough, the AI generates new ones for that topic |
-| 🎮 **Gamification** | XP (+50 per quiz, +100 per mastered topic, +30 per 30 min studied), 5 levels (Distracted → Final Boss 💀), daily streaks |
-| 📊 **Dashboard** | Streak, knowledge score, study time, questions answered, per-module knowledge bars, weekly chart, "your academic opp" |
+| **Learn** | AI splits your notes into topics and explains each one simply |
+| **Brainrot mode** | Same topic, explained casually (still technically correct) |
+| **Quick Notes** | Must-know bullet points per topic |
+| **Flashcards** | Flip cards with keyboard controls (← → space) |
+| **Quiz** | Up to 15 questions, spread across every topic, easy / medium / hard |
+| **Revision alerts** | After a quiz: "You answered 3 Middleware questions incorrectly. Suggested revision time: 12 minutes" |
+| **Topic mastery** | Each topic's score uses your **last 10 answers**, so improvement shows quickly |
+| **Revision Plan** | For each weak topic (<60%): review → 5 easy → 5 medium → review mistakes → retake |
+| **Adaptive questions** | Lock-In quizzes use questions you haven't got right yet. If there aren't enough, the AI generates new ones for that topic |
+| **Gamification** | XP (+50 per quiz, +100 per mastered topic, +30 per 30 min studied), 5 levels (Distracted → Final Boss ), daily streaks |
+| **Dashboard** | Streak, average mastery, study time, questions answered, topic mastery by module, weekly chart, weakest topic |
+| **Light and dark mode** | Users can switch themes; the choice is remembered |
 
 ## Tech stack
 
@@ -115,8 +116,8 @@ Dockerfile, docker-compose.yml, Jenkinsfile
 
 1. **Every answer is stored** with its topic and difficulty.
 2. **Topic score** = % correct over your last 10 answers on that topic (`services/analytics.js → topicScores`).
-   - ≥ 80% = strong 🔥 (first time also gives +100 XP)
-   - < 60% = weak 💀 and goes into your Revision Plan
+   - 80% or above = strong
+   - below 60% = weak, and added to your Revision Plan
 3. **Lock-In quiz** (`routes/quiz.js → /quiz/lockin`) picks 5 questions for one topic and difficulty, starting with ones you've never got right. If fewer than 5 are left, it asks the AI for new ones (`generateMoreQuestions`) and saves them with `source = 'adaptive'`.
 4. **Revision time** = `(100 − score) / 5`, kept between 5 and 15 minutes.
 

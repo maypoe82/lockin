@@ -7,7 +7,7 @@ test('levels follow XP thresholds', () => {
   assert.strictEqual(A.levelFor(250).name, 'Trying');
   assert.strictEqual(A.levelFor(800).name, 'Locked In');
   assert.strictEqual(A.levelFor(1500).name, 'Academic Weapon');
-  assert.strictEqual(A.levelFor(99999).name, 'Final Boss 💀');
+  assert.strictEqual(A.levelFor(99999).name, 'Final Boss');
   assert.strictEqual(A.levelFor(99999).progress, 100);
 });
 

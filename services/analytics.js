@@ -1,8 +1,8 @@
 // Analytics + adaptive learning + gamification.
 const db = require('../config/db');
 
-const WEAK_BELOW = 60;     // topic score under this = "academic opp" 💀
-const MASTERED_AT = 80;    // topic score at/over this = mastered 🔥
+const WEAK_BELOW = 60;     // topic score under this = weak topic
+const MASTERED_AT = 80;    // topic score at/over this = mastered
 const RECENT_ANSWERS = 10; // mastery uses your last N answers per topic, so improvement shows up fast
 
 const LEVELS = [
@@ -10,7 +10,7 @@ const LEVELS = [
   { level: 2, name: 'Trying', min: 250 },
   { level: 3, name: 'Locked In', min: 750 },
   { level: 4, name: 'Academic Weapon', min: 1500 },
-  { level: 5, name: 'Final Boss 💀', min: 3000 },
+  { level: 5, name: 'Final Boss', min: 3000 },
 ];
 
 const XP = { QUIZ: 50, TOPIC_MASTERED: 100, STUDY_30_MIN: 30 };
@@ -69,7 +69,7 @@ function weakTopics(scores) {
   return scores.filter((t) => t.status === 'weak').sort((a, b) => a.score - b.score);
 }
 
-// ---------- Lock-In Plan (the adaptive part) ----------
+// ---------- Revision Plan (the adaptive part) ----------
 
 function buildPlan(weak) {
   return weak.map((t) => ({

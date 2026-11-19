@@ -12,6 +12,13 @@ const upload = multer({
   fileFilter: (req, file, cb) => cb(null, file.mimetype === 'application/pdf' || /\.(txt|md)$/i.test(file.originalname)),
 });
 
+function friendlyAiError(e) {
+  if (/busy|429|500|503|timed out|aborted|No Gemini model/i.test(e.message || '')) {
+    return 'The AI service is busy at the moment. Please try again in a few minutes.';
+  }
+  return 'The notes could not be processed. Please try again, or upload a different file.';
+}
+
 router.use(['/upload', '/materials', '/mistakes'], requireLogin);
 
 router.get('/upload', (req, res) => res.render('upload', { title: 'Upload notes' }));
@@ -24,7 +31,7 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
       text = req.file.mimetype === 'application/pdf' ? await pdfToText(req.file.buffer) : req.file.buffer.toString('utf8');
     }
     if (text.length < 200) {
-      req.session.flash = { type: 'error', msg: "Not enough text to work with 💀 (if it's a scanned PDF, it has no selectable text)." };
+      req.session.flash = { type: 'error', msg: 'Not enough text was found. Scanned PDFs without selectable text cannot be read.' };
       return res.redirect('/upload');
     }
     const moduleCode = (req.body.module_code || 'GENERAL').trim().toUpperCase().slice(0, 20);
@@ -33,11 +40,11 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
     const pack = await ai.generateStudyPack(text, moduleCode);
     const materialId = await savePack(uid, moduleCode, title, text, pack);
 
-    req.session.flash = { type: 'success', msg: `Locked in ${pack.topics.length} topics from "${title}" 🔒` };
+    req.session.flash = { type: 'success', msg: `Study pack created: ${pack.topics.length} topics from "${title}".` };
     res.redirect(`/materials/${materialId}`);
   } catch (e) {
     console.error(e);
-    req.session.flash = { type: 'error', msg: `AI couldn't process that: ${e.message}` };
+    req.session.flash = { type: 'error', msg: friendlyAiError(e) };
     res.redirect('/upload');
   }
 });
@@ -90,7 +97,7 @@ router.get('/materials/:id', async (req, res, next) => {
   try {
     const uid = req.session.user.id;
     const [[material]] = await db.query('SELECT * FROM materials WHERE id = ? AND user_id = ?', [req.params.id, uid]);
-    if (!material) return res.status(404).render('error', { title: '404', message: 'Material not found 💀' });
+    if (!material) return res.status(404).render('error', { title: '404', message: 'Material not found.' });
     const [topics] = await db.query('SELECT * FROM topics WHERE material_id = ? ORDER BY id', [material.id]);
     const [flashcards] = await db.query(
       'SELECT f.*, t.name AS topic FROM flashcards f JOIN topics t ON t.id = f.topic_id WHERE f.material_id = ? ORDER BY f.id', [material.id]);

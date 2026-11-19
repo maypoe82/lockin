@@ -22,8 +22,8 @@ Rules:
 - Split the content into 3-6 distinct TOPICS that a student could be tested on separately.
 - Only use facts from the material. Do not invent content that is not there.
 - "learn": a clear, simplified explanation (80-150 words) a tired student understands.
-- "brainrot": the SAME concept explained in funny Gen-Z internet slang with emojis
-  (e.g. "bro", "no cap", "it's giving", "💀", "fr"). Must still be technically correct. 40-90 words.
+- "brainrot": the SAME concept explained in casual, funny Gen-Z internet slang
+  (e.g. "bro", "no cap", "it's giving", "fr"). Do NOT use emojis. Must still be technically correct. 40-90 words.
 - "notes": 3-6 short bullet points of must-know facts.
 - "flashcards": 2-4 per topic, short question on front, short answer on back.
 - "questions": 3 per topic (1 easy, 1 medium, 1 hard), multiple choice, exactly 4 options,
@@ -98,8 +98,13 @@ async function availableFlashModels() {
   return discovered;
 }
 
-async function geminiOnce(model, prompt) {
+const AI_TIME_BUDGET_MS = Number(process.env.AI_TIMEOUT_MS || 90000);
+
+async function geminiOnce(model, prompt, deadline) {
+  const remaining = deadline - Date.now();
+  if (remaining <= 0) throw new Error('AI request timed out');
   return fetch(`${GEMINI_BASE}/models/${model}:generateContent`, {
+    signal: AbortSignal.timeout(Math.min(remaining, 60000)),
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
     body: JSON.stringify({
@@ -110,6 +115,7 @@ async function geminiOnce(model, prompt) {
 }
 
 async function callGemini(prompt) {
+  const deadline = Date.now() + AI_TIME_BUDGET_MS;
   const tried = new Set();
   let lastError;
   const tryModels = async (models) => {
@@ -117,7 +123,13 @@ async function callGemini(prompt) {
       if (!model || tried.has(model)) continue;
       tried.add(model);
       for (let attempt = 1; attempt <= 3; attempt++) {
-        const res = await geminiOnce(model, prompt);
+        if (Date.now() >= deadline) throw new Error('AI request timed out');
+        let res;
+        try {
+          res = await geminiOnce(model, prompt, deadline);
+        } catch (err) {
+          throw new Error(`AI request timed out (${model}): ${err.message}`);
+        }
         if (res.ok) {
           const data = await res.json();
           return data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
@@ -125,7 +137,7 @@ async function callGemini(prompt) {
         lastError = new Error(`Gemini error ${res.status} (${model}): ${(await res.text()).slice(0, 200)}`);
         if (!RETRYABLE.has(res.status)) break;
         console.warn(`Gemini ${model} busy (${res.status}), attempt ${attempt}/3`);
-        if (attempt < 3) await sleep(attempt * 3000);
+        if (attempt < 3 && Date.now() + attempt * 3000 < deadline) await sleep(attempt * 3000);
       }
       if (lastError && !/Gemini error (404|429|500|503)/.test(lastError.message)) throw lastError; // e.g. bad key
     }
@@ -162,28 +174,32 @@ async function askJSON(prompt) {
 
 // ---------- Validation (never trust raw model output) ----------
 
+// Remove emojis so all generated content stays formal.
+const EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+const clean = (v) => String(v ?? '').replace(EMOJI, '').replace(/\s{2,}/g, ' ').trim();
+
 function cleanQuestion(q) {
   if (!q || !q.question || !Array.isArray(q.options) || q.options.length < 2) return null;
   const options = q.options.slice(0, 4).map(String);
   let idx = Number(q.answer_index);
   if (!Number.isInteger(idx) || idx < 0 || idx >= options.length) return null;
   const difficulty = ['easy', 'medium', 'hard'].includes(q.difficulty) ? q.difficulty : 'medium';
-  return { difficulty, question: String(q.question), options, answer_index: idx, explanation: String(q.explanation || '') };
+  return { difficulty, question: clean(q.question), options: options.map(clean), answer_index: idx, explanation: clean(q.explanation) };
 }
 
 function cleanPack(pack) {
   const topics = (pack.topics || [])
     .filter((t) => t && t.name)
     .map((t) => ({
-      name: String(t.name).slice(0, 120),
-      learn: String(t.learn || ''),
-      brainrot: String(t.brainrot || ''),
-      notes: (t.notes || []).map(String).slice(0, 8),
-      flashcards: (t.flashcards || []).filter((f) => f && f.front && f.back).map((f) => ({ front: String(f.front), back: String(f.back) })),
+      name: clean(t.name).slice(0, 120),
+      learn: clean(t.learn),
+      brainrot: clean(t.brainrot),
+      notes: (t.notes || []).map(clean).filter(Boolean).slice(0, 8),
+      flashcards: (t.flashcards || []).filter((f) => f && f.front && f.back).map((f) => ({ front: clean(f.front), back: clean(f.back) })),
       questions: (t.questions || []).map(cleanQuestion).filter(Boolean),
     }));
   if (!topics.length) throw new Error('AI returned no topics');
-  return { summary: String(pack.summary || ''), topics };
+  return { summary: clean(pack.summary), topics };
 }
 
 // ---------- Demo generator (no API key needed) ----------
@@ -260,7 +276,7 @@ function mockPack(text) {
       return {
         name: t.name,
         learn: ss.slice(0, 3).join(' '),
-        brainrot: `ok so ${t.name} 💀 — basically: ${ss[0].charAt(0).toLowerCase() + ss[0].slice(1)} no cap. that's the whole vibe fr 🔒`,
+        brainrot: `ok so ${t.name}, basically: ${ss[0].charAt(0).toLowerCase() + ss[0].slice(1)} no cap. that's the whole idea fr.`,
         notes: ss.slice(0, 5),
         flashcards: ss.slice(0, 3).map((s) => {
           const w = keyword(s);
